@@ -6,6 +6,7 @@ Juggler CLI
 Usage:  app [OPTION]... <command>
 
 Options:
+  -a            Manage all applications installed on this system
   -n <name>     Manage an application with the specified project name
   -h            Show this help message
 
@@ -16,12 +17,11 @@ function about_help() {
     echo "Run app -h for more information."
 }
 
-function find_directory() {
+function try_find_directory() {
     local workdir=$(pwd)
     while true; do
         if [[ $workdir == "/" ]]; then
-            echo "No compose file found in this directory and its parents"
-            exit 1
+            break
         elif [[ -e "$workdir/docker-compose.yml" ]]; then
             DIRECTORY=$workdir
             break
@@ -32,10 +32,29 @@ function find_directory() {
 }
 
 function main() {
+    local all=0
+    local named=0
     local help=0
-    while getopts ":n:h" arg; do
+    while getopts ":an:h" arg; do
         case $arg in
+            a)
+                if [[ $named == 1 ]]; then
+                    echo "Options 'a' and 'n' are mutually exclusive."
+                    about_help
+                    exit 1
+                else
+                    all=1
+                fi
+                ;;
             n)
+                if [[ $all == 1 ]]; then
+                    echo "Options 'a' and 'n' are mutually exclusive."
+                    about_help
+                    exit 1
+                else
+                    named=1
+                fi
+
                 if [[ -z $OPTARG ]]; then
                     echo "Missing project name."
                     about_help
@@ -67,6 +86,10 @@ function main() {
         esac
     done
     shift $((OPTIND-1))
+
+    if [[ $all == 0 && $named == 0 ]]; then
+        try_find_directory
+    fi
 
     if [[ $help == 1 ]]; then
         help
