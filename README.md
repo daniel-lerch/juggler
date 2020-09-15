@@ -8,6 +8,12 @@
 
 ### Variables
 - `PROJECT_NAME` e.g. _global/nginx_
+- `COMPOSE_FILE` e.g. _/opt/global/nginx/docker-compose.yml_
+- `COMPOSE_PROJECT_NAME` e.g. _global-nginx_
+- `APP_CONTAINER_NAME` e.g. _global-nginx-app_
+
+### Functions
+- `invoke_composer()` (exposed) Invokes _docker-compose_ with all required options
 
 ### Example
 Nextcloud (located in `/opt/church/nextcloud`)
@@ -17,7 +23,7 @@ Nextcloud (located in `/opt/church/nextcloud`)
 APP_IMAGE=nextcloud:latest
 
 DB_IMAGE=mariadb:latest
-DB_CONTAINER_NAME=$PROJECT_NAME-db
+DB_CONTAINER_NAME=$COMPOSE_PROJECT_NAME-db
 
 MYSQL_ROOT_PASSWORD=root
 MYSQL_DATABASE=nextcloud
@@ -46,4 +52,10 @@ services:
       - MYSQL_DATABASE
       - MYSQL_USER
       - MYSQL_PASSWORD
+```
+- `juggler_include.sh` Implement custom functions
+```bash
+function cmd_execw() {
+    invoke_composer exec -u www-data app bash
+}
 ```

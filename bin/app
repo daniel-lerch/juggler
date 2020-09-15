@@ -5,6 +5,10 @@ function help() {
 Juggler CLI
 Usage:  app [OPTION]... <command>
 
+Commands:
+  up
+  down
+
 Options:
   -a            Manage all applications installed on this system
   -n <name>     Manage an application with the specified project name
@@ -29,6 +33,21 @@ function try_find_directory() {
             workdir=$(dirname $workdir)
         fi
     done
+}
+
+function foreach_invoke() {
+    for directory in /opt/*/*; do
+        [[ ! -e $directory/docker-compose.yml ]] && continue
+        init $directory
+        echo "Processing $PROJECT_NAME..."
+        execute_command $@
+    done
+}
+
+function execute_command() {
+    local command=$1
+    shift
+    eval $command "\$@"
 }
 
 function main() {
@@ -91,12 +110,43 @@ function main() {
         try_find_directory
     fi
 
+    # Load core script which implements all commands
+    source /opt/juggler/lib/core.sh
+
+    if [[ ! -z $DIRECTORY ]]; then
+        init $DIRECTORY
+    fi
+
     if [[ $help == 1 ]]; then
         help
         exit 0
     fi
 
-    # TODO: Source library file and call main method
+    if [[ -z $1 ]]; then
+        echo "Missing command"
+        about_help
+        exit 1
+    fi
+
+    declare -F "cmd_$1" > /dev/null
+    if [[ $? != 0 ]]; then
+        echo "Invalid command: '$1'"
+        about_help
+        exit 1
+    fi
+
+    if [[ $all == 1 ]]; then
+        foreach_invoke $@
+        exit 0
+    fi
+
+    if [[ -z $DIRECTORY ]]; then
+        echo "No compose file found in this directory and its parents"
+        exit 1
+    fi
+
+    execute_command $@
+    exit 0
 }
 
 main $@
