@@ -2,11 +2,15 @@
 
 ## Install
 1. `git clone https://github.com/daniel-lerch/juggler.git /opt/juggler`
-2. `/opt/juggler/install.sh`
+2. Add `/opt/juggler/bin` to _PATH_ permanently for all users
 
 ## Manage an application
 
-Example: Nextcloud (located in `/opt/church/nextcloud`)
+### Variables
+- `PROJECT_NAME` e.g. _global/nginx_
+
+### Example
+Nextcloud (located in `/opt/church/nextcloud`)
 
 - `juggler.env` Custom environment variables
 ```sh

@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+
+function help() {
+    cat <<EOT
+Juggler CLI
+Usage:  app [OPTION]... <command>
+
+Options:
+  -n <name>     Manage an application with the specified project name
+  -h            Show this help message
+
+EOT
+}
+
+function about_help() {
+    echo "Run app -h for more information."
+}
+
+function find_directory() {
+    local workdir=$(pwd)
+    while true; do
+        if [[ $workdir == "/" ]]; then
+            echo "No compose file found in this directory and its parents"
+            exit 1
+        elif [[ -e "$workdir/docker-compose.yml" ]]; then
+            DIRECTORY=$workdir
+            break
+        else
+            workdir=$(dirname $workdir)
+        fi
+    done
+}
+
+function main() {
+    local help=0
+    while getopts ":n:h" arg; do
+        case $arg in
+            n)
+                if [[ -z $OPTARG ]]; then
+                    echo "Missing project name."
+                    about_help
+                    exit 1
+                else
+                    DIRECTORY="/opt/$OPTARG"
+                    if [[ ! -d $DIRECTORY ]]; then
+                        echo "Directory not found: $DIRECTORY"
+                        exit 1
+                    elif [[ ! -e "$DIRECTORY/docker-compose.yml" ]]; then
+                        echo "No compose file found in $DIRECTORY"
+                        exit 1
+                    fi
+                fi
+                ;;
+            h)
+                help=1
+                ;;
+            \?)
+                echo "Invalid option: '$OPTARG'"
+                about_help
+                exit 1
+                ;;
+            :)
+                echo "Invalid option: '$OPTARG' requires an argument"
+                about_help
+                exit 1
+                ;;
+        esac
+    done
+    shift $((OPTIND-1))
+
+    if [[ $help == 1 ]]; then
+        help
+        exit 0
+    fi
+
+    # TODO: Source library file and call main method
+}
+
+main $@
