@@ -7,7 +7,10 @@
 ## Manage an application
 
 ### Variables
-- `PROJECT_NAME` e.g. _global/nginx_
+- `PROJECT_DIR` e.g. _/opt/global/nginx_
+- `PROJECT_NAME` e.g. _nginx_
+- `PROJECT_GROUP` e.g. _global_
+- `PROJECT_TITLE` e.g. _global/nginx_
 - `COMPOSE_FILE` e.g. _/opt/global/nginx/docker-compose.yml_
 - `COMPOSE_PROJECT_NAME` e.g. _global-nginx_
 - `APP_CONTAINER_NAME` e.g. _global-nginx-app_

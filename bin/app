@@ -6,8 +6,9 @@ Juggler CLI
 Usage:  app [OPTION]... <command>
 
 Commands:
-  up
-  down
+  up [-f]       Create containers and start them
+  down          Stop and delete containers
+  update [-r]   Build or pull images
 
 Options:
   -a            Manage all applications installed on this system
@@ -39,7 +40,7 @@ function foreach_invoke() {
     for directory in /opt/*/*; do
         [[ ! -e $directory/docker-compose.yml ]] && continue
         init $directory
-        echo "Processing $PROJECT_NAME..."
+        echo "Processing $PROJECT_TITLE..."
         execute_command $@
     done
 }
@@ -47,7 +48,7 @@ function foreach_invoke() {
 function execute_command() {
     local command=$1
     shift
-    eval $command "\$@"
+    eval "cmd_$command" "\$@"
 }
 
 function main() {
