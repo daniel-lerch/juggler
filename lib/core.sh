@@ -54,10 +54,25 @@ function cmd_up() {
     if [[ $1 == "-f" ]]; then
         invoke_composer down
     fi
+
     update_env_file
     invoke_composer up -d
 }
 
 function cmd_down() {
     invoke_composer down
+}
+
+function cmd_update() {
+    update_env_file
+    declare -F update_images > /dev/null
+    if [[ $? == 0 ]]; then
+        update_images
+    else
+        invoke_composer pull
+    fi
+
+    if [[ $1 == "-r" ]]; then
+        invoke_composer up -d
+    fi
 }

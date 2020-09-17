@@ -17,6 +17,7 @@
 
 ### Functions
 - `invoke_composer()` (exposed) Invokes _docker-compose_ with all required options
+- `update_images()` (callback) Builds custom images and pull images
 
 ### Example
 Nextcloud (located in `/opt/church/nextcloud`)
