@@ -9,6 +9,11 @@ Commands:
   up [-f]       Create containers and start them
   down          Stop and delete containers
   update [-r]   Build or pull images
+  start
+  restart
+  stop
+  exec
+  logs
 
 Options:
   -a            Manage all applications installed on this system

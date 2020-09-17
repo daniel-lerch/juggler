@@ -76,3 +76,23 @@ function cmd_update() {
         invoke_composer up -d
     fi
 }
+
+function cmd_start() {
+    invoke_composer start $@
+}
+
+function cmd_restart() {
+    invoke_composer restart $@
+}
+
+function cmd_stop() {
+    invoke_composer stop $@
+}
+
+function cmd_exec() {
+    invoke_composer exec app bash
+}
+
+function cmd_logs() {
+    invoke_composer logs -f app
+}
