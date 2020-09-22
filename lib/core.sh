@@ -43,14 +43,14 @@ EOF
         source "$PROJECT_DIR/juggler_include.sh"
     fi
 
-    if [[ ! -z $MYSQL_DATABASE && ! -z $MYSQL_USERNAME && ! -z $MYSQL_PASSWORD ]]; then
+    if [[ ! -z $MYSQL_DATABASE && ! -z $MYSQL_USER && ! -z $MYSQL_PASSWORD ]]; then
         ext_mysql
     fi
 }
 
 function invoke_composer() {
     # TODO: Omit sudo if not required
-    sudo docker-compose -f $COMPOSE_FILE -p $COMPOSE_PROJECT_NAME $@
+    sudo docker-compose -f $COMPOSE_FILE --env-file "$PROJECT_DIR/.env" -p $COMPOSE_PROJECT_NAME $@
 }
 
 function cmd_up() {
@@ -58,7 +58,6 @@ function cmd_up() {
         invoke_composer down
     fi
 
-    update_env_file
     invoke_composer up -d
 }
 
@@ -67,15 +66,19 @@ function cmd_down() {
 }
 
 function cmd_update() {
-    update_env_file
+    if [[ $1 == "-r" ]]; then
+        local recreate=1
+        shift
+    fi
+
     declare -F update_images > /dev/null
     if [[ $? == 0 ]]; then
-        update_images
+        update_images $@
     else
         invoke_composer pull
     fi
 
-    if [[ $1 == "-r" ]]; then
+    if [[ $recreate == 1 ]]; then
         invoke_composer up -d
     fi
 }
@@ -104,7 +107,7 @@ function ext_mysql() {
     declare -F "cmd_execdb" > /dev/null
     if [[ $? != 0 ]]; then
         function cmd_execdb() {
-            invoke_composer exec db mysql -h localhost -u $MYSQL_USERNAME -p$MYSQL_PASSWORD $MYSQL_DATABASE
+            invoke_composer exec db mysql -h localhost -u $MYSQL_USER -p$MYSQL_PASSWORD $MYSQL_DATABASE
         }
     fi
 }
