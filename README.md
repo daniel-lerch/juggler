@@ -3,6 +3,7 @@
 ## Install
 1. `git clone https://github.com/daniel-lerch/juggler.git /opt/juggler`
 2. Add `/opt/juggler/bin` to _PATH_ permanently for all users
+3. Set _JUGGLER\_CONFIG\_FILE_ permanently for all users (read more about config below)
 
 ## Manage an application
 
@@ -15,9 +16,19 @@
 - `COMPOSE_PROJECT_NAME` e.g. _global-nginx_
 - `APP_CONTAINER_NAME` e.g. _global-nginx-app_
 
+Set the following variables to use the `execdb` command:
+- `MYSQL_DATABASE`
+- `MYSQL_USER`
+- `MYSQL_PASSWORD`
+
+Set the following variables for automatic MySQL dumps and mount `/var/opt/backup`:
+- `MYSQL_DATABASE`
+- `MYSQL_ROOT_PASSWORD`
+
 ### Functions
 - `invoke_composer()` (exposed) Invokes _docker-compose_ with all required options
-- `update_images()` (callback) Builds custom images and pull images
+- `update_images()` (optional callback) Builds custom images and pull images
+- `prepare_backup()` (optional callback) Exports data before Borg backup starts
 
 ### Example
 Nextcloud (located in `/opt/church/nextcloud`)
@@ -60,4 +71,15 @@ services:
       - MYSQL_DATABASE
       - MYSQL_USER
       - MYSQL_PASSWORD
+```
+- _$JUGGLER\_CONFIG\_FILE_ Global Juggler config file
+```bash
+# Change this variable to set custom default backup target
+BACKUP_TARGET_DEFAULT="/var/opt/backup"
+BACKUP_TARGET_DEFAULT_ENCRYPTION="none"
+BACKUP_TARGET_DEFAULT_PASSPHRASE=""
+# Add additional targets that can be selected manually
+BACKUP_TARGET_REMOTE="backup@example.com:/var/opt/backup"
+BACKUP_TARGET_REMOTE_ENCRYPTION="repokey"
+BACKUP_TARGET_REMOTE_PASSPHRASE="password"
 ```

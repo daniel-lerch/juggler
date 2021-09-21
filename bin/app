@@ -56,6 +56,20 @@ function execute_command() {
     eval "cmd_$command" "\$@"
 }
 
+function cmd_backup() {
+    # Load external backup module
+    if [[ -z $JUGGLER_CONFIG_FILE ]]; then
+        echo "The JUGGLER_CONFIG_FILE variable is not set"
+        exit 1
+    elif [[ ! -e $JUGGLER_CONFIG_FILE ]]; then
+        echo "No Juggler config file found at $JUGGLER_CONFIG_FILE"
+        exit 1
+    fi
+    source $JUGGLER_CONFIG_FILE
+    source /opt/juggler/lib/backup.sh
+    backup_main $@
+}
+
 function main() {
     local all=0
     local named=0
@@ -80,19 +94,14 @@ function main() {
                     named=1
                 fi
 
-                if [[ -z $OPTARG ]]; then
-                    echo "Missing project name."
-                    about_help
+                # getopts ensures that $OPTARG is not empty
+                DIRECTORY="/opt/$OPTARG"
+                if [[ ! -d $DIRECTORY ]]; then
+                    echo "Directory not found: $DIRECTORY"
                     exit 1
-                else
-                    DIRECTORY="/opt/$OPTARG"
-                    if [[ ! -d $DIRECTORY ]]; then
-                        echo "Directory not found: $DIRECTORY"
-                        exit 1
-                    elif [[ ! -e "$DIRECTORY/docker-compose.yml" ]]; then
-                        echo "No compose file found in $DIRECTORY"
-                        exit 1
-                    fi
+                elif [[ ! -e "$DIRECTORY/docker-compose.yml" ]]; then
+                    echo "No compose file found in $DIRECTORY"
+                    exit 1
                 fi
                 ;;
             h)
