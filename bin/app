@@ -5,16 +5,11 @@ function help() {
 Juggler CLI
 Usage:  app [OPTION]... <command>
 
-Commands:
-  up [-f]       Create containers and start them
-  down          Stop and delete containers
-  update [-r]   Build or pull images
-  start
-  restart
-  stop
-  exec
-  logs
+EOT
 
+core_commands_overview
+
+cat <<EOT
 Options:
   -a            Manage all applications installed on this system
   -n <name>     Manage an application with the specified project name
@@ -58,41 +53,17 @@ function execute_command() {
 
 function cmd_backup() {
     # Load external backup module
-    if [[ -z $JUGGLER_CONFIG_FILE ]]; then
-        echo "The JUGGLER_CONFIG_FILE variable is not set"
-        exit 1
-    elif [[ ! -e $JUGGLER_CONFIG_FILE ]]; then
-        echo "No Juggler config file found at $JUGGLER_CONFIG_FILE"
-        exit 1
-    fi
-    source $JUGGLER_CONFIG_FILE
     source /opt/juggler/lib/backup.sh
     backup_main $@
 }
 
 function main() {
-    local all=0
     local named=0
     local help=0
-    while getopts ":an:h" arg; do
+    while getopts ":n:h" arg; do
         case $arg in
-            a)
-                if [[ $named == 1 ]]; then
-                    echo "Options 'a' and 'n' are mutually exclusive."
-                    about_help
-                    exit 1
-                else
-                    all=1
-                fi
-                ;;
             n)
-                if [[ $all == 1 ]]; then
-                    echo "Options 'a' and 'n' are mutually exclusive."
-                    about_help
-                    exit 1
-                else
-                    named=1
-                fi
+                named=1
 
                 # getopts ensures that $OPTARG is not empty
                 DIRECTORY="/opt/$OPTARG"
@@ -121,7 +92,7 @@ function main() {
     done
     shift $((OPTIND-1))
 
-    if [[ $all == 0 && $named == 0 ]]; then
+    if [[ $named == 0 ]]; then
         try_find_directory
     fi
 
@@ -129,7 +100,7 @@ function main() {
     source /opt/juggler/lib/core.sh
 
     if [[ ! -z $DIRECTORY ]]; then
-        init $DIRECTORY
+        core_init $DIRECTORY
     fi
 
     if [[ $help == 1 ]]; then
@@ -148,11 +119,6 @@ function main() {
         echo "Invalid command: '$1'"
         about_help
         exit 1
-    fi
-
-    if [[ $all == 1 ]]; then
-        foreach_invoke $@
-        exit 0
     fi
 
     if [[ -z $DIRECTORY ]]; then

@@ -5,32 +5,59 @@
 2. Add `/opt/juggler/bin` to _PATH_ permanently for all users
 3. Set _JUGGLER\_CONFIG\_FILE_ permanently for all users (read more about config below)
 
-## Manage an application
+## Structure
+Juggler consists out of four main components:
+1. `bin/app` the bootstrapper executable
+2. `lib/core.sh` the core module
+3. `lib/compose.sh` the Docker Compose module
+4. `lib/backup.sh` the Borg Backup module
 
-### Variables
+Major challenges with Bash for a complex framework like Juggler
+- Parse variables from `docker-compose.yml` files. Solution: Implemented in an external Python script.
+- Juggler cannot iterate through multiple apps because of dangling variables. Solution: Start an own Juggler process for each app.
+- Creating a good help overview requires lots of additional functions. Solution: Only show compose commands and backup module.
+- For multiple apps it is hard to determine whether a command is available.
+
+## Variables and functions
+
+### Core module
+Exposed variables:
 - `PROJECT_DIR` e.g. _/opt/global/nginx_
 - `PROJECT_NAME` e.g. _nginx_
 - `PROJECT_GROUP` e.g. _global_
 - `PROJECT_TITLE` e.g. _global/nginx_
+- `PROJECT_FULLNAME` e.g. _global-nginx_
+
+### Docker Compose module
+Exposed variables:
+- `COMPOSE_PROJECT_NAME` alias for _PROJECT\_FULLNAME_
 - `COMPOSE_FILE` e.g. _/opt/global/nginx/docker-compose.yml_
-- `COMPOSE_PROJECT_NAME` e.g. _global-nginx_
 - `APP_CONTAINER_NAME` e.g. _global-nginx-app_
 
-Set the following variables to use the `execdb` command:
+Optional variables (for `execdb` command):
 - `MYSQL_DATABASE`
 - `MYSQL_USER`
 - `MYSQL_PASSWORD`
 
-Set the following variables for automatic MySQL dumps and mount `/var/opt/backup`:
+Exposed functions:
+- `invoke_composer()` Invokes _docker-compose_ with all required options
+
+Optional callbacks:
+- `update_images()` (optional callback) Builds custom images and pull images
+
+### Borg Backup module
+Exposed variables (change to customize behavior):
+- `BACKUP_DIRS` e.g. _/opt/global/nginx_
+- `BACKUP_EXCLUDE` e.g. _/opt/global/nginx/log_
+
+Optional variables (for automatic MySQL dumps to `/var/opt/backup`):
 - `MYSQL_DATABASE`
 - `MYSQL_ROOT_PASSWORD`
 
-### Functions
-- `invoke_composer()` (exposed) Invokes _docker-compose_ with all required options
-- `update_images()` (optional callback) Builds custom images and pull images
-- `prepare_backup()` (optional callback) Exports data before Borg backup starts
+Optional callbacks:
+- `prepare_backup()` Exports data before Borg backup starts
 
-### Example
+## Example
 Nextcloud (located in `/opt/church/nextcloud`)
 
 - `juggler.sh` Custom functions and environment variables
