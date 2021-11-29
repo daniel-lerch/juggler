@@ -36,25 +36,10 @@ function try_find_directory() {
     done
 }
 
-function foreach_invoke() {
-    for directory in /opt/*/*; do
-        [[ ! -e $directory/docker-compose.yml ]] && continue
-        init $directory
-        echo "Processing $PROJECT_TITLE..."
-        execute_command $@
-    done
-}
-
 function execute_command() {
     local command=$1
     shift
-    eval "cmd_$command" "\$@"
-}
-
-function cmd_backup() {
-    # Load external backup module
-    source /opt/juggler/lib/backup.sh
-    backup_main $@
+    eval "cmd_$command \$@"
 }
 
 function main() {
@@ -92,20 +77,24 @@ function main() {
     done
     shift $((OPTIND-1))
 
-    if [[ $named == 0 ]]; then
+    if [[ $named -eq 0 ]]; then
         try_find_directory
     fi
 
     # Load core script which implements all commands
     source /opt/juggler/lib/core.sh
+    core_load_config
 
-    if [[ ! -z $DIRECTORY ]]; then
-        core_init $DIRECTORY
-    fi
-
-    if [[ $help == 1 ]]; then
+    if [[ $help -eq 1 ]]; then
         help
         exit 0
+    fi
+
+    if [[ -z $DIRECTORY ]]; then
+        echo "No compose file found in this directory and its parents"
+        exit 1
+    else
+        core_init $DIRECTORY
     fi
 
     if [[ -z $1 ]]; then
@@ -115,14 +104,9 @@ function main() {
     fi
 
     declare -F "cmd_$1" > /dev/null
-    if [[ $? != 0 ]]; then
+    if [[ $? -ne 0 ]]; then
         echo "Invalid command: '$1'"
         about_help
-        exit 1
-    fi
-
-    if [[ -z $DIRECTORY ]]; then
-        echo "No compose file found in this directory and its parents"
         exit 1
     fi
 

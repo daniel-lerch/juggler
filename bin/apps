@@ -1,0 +1,90 @@
+#!/usr/bin/env bash
+
+function help() {
+    cat <<EOT
+Juggler global CLI
+Usage:  apps [OPTION]... <command>
+
+EOT
+
+core_commands_overview
+
+cat <<EOT
+Options:
+  -h            Show this help message
+
+EOT
+}
+
+function about_help() {
+    echo "Run apps -h for more information."
+}
+
+function main() {
+    local help=0
+    while getopts ":h" arg; do
+        case $arg in
+            h)
+                help=1
+                ;;
+            \?)
+                echo "Invalid option: '$OPTARG'"
+                about_help
+                exit 1
+                ;;
+            :)
+                echo "Invalid option: '$OPTARG' requires an argument"
+                about_help
+                exit 1
+                ;;
+        esac
+    done
+    shift $((OPTIND-1))
+
+    # Load core script which implements all commands
+    source /opt/juggler/lib/core.sh
+    core_load_config
+
+    if [[ $help -eq 1 ]]; then
+        help
+        exit 0
+    fi
+
+    if [[ -z $1 ]]; then
+        echo "Missing command"
+        about_help
+        exit 1
+    fi
+
+    local composeModule=0
+
+    declare -F "cmd_$1" > /dev/null
+    if [[ $? -ne 0 ]]; then
+        source "/opt/juggler/lib/compose.sh"
+        declare -F "cmd_$1" > /dev/null
+        if [[ $? -eq 0 ]]; then
+            composeModule=1
+        else
+            echo "Invalid command: '$1'"
+            about_help
+            exit 1
+        fi
+    fi
+
+    for PROJECT_DIR in /opt/*/*; do
+        # Skip folder if no compose file or juggler file available
+        [[ (! -e "$PROJECT_DIR/docker-compose.yml") && ( ($composeModule -eq 1) || (! -e "$PROJECT_DIR/juggler.sh") ) ]] && continue
+        
+        PROJECT_NAME=$(basename $PROJECT_DIR)
+        local group_directory=$(dirname $PROJECT_DIR)
+        PROJECT_GROUP=$(basename $group_directory)
+        PROJECT_TITLE="$PROJECT_GROUP/$PROJECT_NAME"
+
+        echo "Processing $PROJECT_TITLE..."
+        /opt/juggler/bin/app -n $PROJECT_TITLE $@
+    done
+
+    exit 0
+}
+
+main $@

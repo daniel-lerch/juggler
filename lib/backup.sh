@@ -26,11 +26,18 @@ function backup_about_help() {
     echo "Run app backup -h for more information."
 }
 
+function backup_pre_init() {
+    BACKUP_DIRS=$PROJECT_DIR
+    BACKUP_EXCLUDE="$PROJECT_DIR/log"
+}
+
 function backup_main() {
     TARGET_NAME="default"
     TARGET_PATH=$BACKUP_TARGET_DEFAULT
     TARGET_ENCRYPTION=$BACKUP_TARGET_DEFAULT_ENCRYPTION
     TARGET_PASSPHRASE=$BACKUP_TARGET_DEFAULT_PASSPHRASE
+    # Reset the argument counter as we are calling getopts the second time
+    unset OPTIND
     local help=0
     while getopts ":t:h" arg; do
         case $arg in
@@ -38,8 +45,8 @@ function backup_main() {
                 # getopts ensures that $OPTARG is not empty
                 targetName=$OPTARG
                 eval "TARGET_PATH=\$BACKUP_TARGET_${OPTARG^^}"
-                eval "TARGET_ENCRYPTION=\$_BACKUP_TARGET_${OPTARG^^}_ENCRYPTION"
-                eval "TARGET_PASSPHRASE=\$_BACKUP_TARGET_${OPTARG^^}_PASSPHRASE"
+                eval "TARGET_ENCRYPTION=\$BACKUP_TARGET_${OPTARG^^}_ENCRYPTION"
+                eval "TARGET_PASSPHRASE=\$BACKUP_TARGET_${OPTARG^^}_PASSPHRASE"
                 if [[ -z $TARGET_PATH ]]; then
                     echo "Invalid backup target: '$OPTARG'"
                     exit 1
@@ -71,9 +78,9 @@ function backup_main() {
     shift
 
     declare -F "cmd_backup_$command" > /dev/null
-    if [[ $? != 0 ]]; then
+    if [[ $? -ne 0 ]]; then
         echo "Invalid command: '$command'"
-        about_help
+        backup_about_help
         exit 1
     fi
 
@@ -83,7 +90,7 @@ function backup_main() {
     CRON_FILE_PATH="/etc/cron.d/borgbackup-$COMPOSE_PROJECT_NAME"
     LOG_USER=$(stat -c "%U" $PROJECT_DIR)
 
-    eval "cmd_backup_$command" "$@"
+    eval "cmd_backup_$command \$@"
 }
 
 function append_log() {
@@ -153,7 +160,7 @@ function cmd_backup_create() {
 
 function cmd_backup_prune() {
     # TODO: Implement backup prune
-    
+
     # Delete old logfiles after one month
     local threshold=$(date --date="last month" +%y%m%d)
     for file in $LOG_DIR/backup-*.log; do
