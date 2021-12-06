@@ -28,7 +28,11 @@ function backup_about_help() {
 
 function backup_pre_init() {
     BACKUP_DIRS=$PROJECT_DIR
-    BACKUP_EXCLUDE="$PROJECT_DIR/log"
+    BACKUP_EXCLUDE="
+        $PROJECT_DIR/log
+        $PROJECT_DIR/.env
+    "
+    BACKUP_PRUNE="--keep-within=7d --keep-weekly=4 --keep-monthly=12"
 }
 
 function backup_main() {
@@ -110,22 +114,23 @@ function cmd_backup_init() {
 function cmd_backup_register() {
     # Get random minute between 0 and 59 to prevent backups from running all at once
     local minute=$(shuf -i 0-59 -n 1)
-    local command="/opt/juggler/bin/app backup create --prune"
+    local command="/opt/juggler/bin/app -n $PROJECT_TITLE backup create --prune"
     echo "# Juggler cron job to backup $PROJECT_TITLE
 $minute 3 * * * root $command" | sudo tee $CRON_FILE_PATH > /dev/null
-    echo "Registered cron job for $APPS_TITLE"
+    echo "Registered cron job for $PROJECT_TITLE"
 }
 
 function cmd_backup_deregister() {
     if [[ -e $CRON_FILE_PATH ]]; then
         sudo rm $CRON_FILE_PATH
-        echo "Removed cron job for $APPS_TITLE"
+        echo "Removed cron job for $PROJECT_TITLE"
     else
-        echo "No cron job found for $APPS_TITLE"
+        echo "No cron job found for $PROJECT_TITLE"
     fi
 }
 
 function cmd_backup_create() {
+    local timestamp=$(date +%y%m%d-%H%M)
     # Create log folder
     [[ ! -d $LOG_DIR ]] && sudo -u $LOG_USER mkdir $LOG_DIR
     # Check if function prepare_backup() is defined
@@ -148,18 +153,34 @@ function cmd_backup_create() {
     # Log failure message for easy usage in scripts
     if [[ -z ${prepareStatus+x} ]]; then
         # Substitutes unset variable to null and everything else to x
-        echo "INFO ($(date +%y%m%d-%H%M)): prepare_backup is not defined" | append_logfile
+        echo "INFO ($timestamp): prepare_backup is not defined" | append_logfile
     elif [[ $prepareStatus -eq 0 ]]; then
-        echo "SUCCESS ($(date +%y%m%d-%H%M)): prepare_backup completed successfully" | append_logfile
+        echo "SUCCESS ($timestamp): prepare_backup completed successfully" | append_logfile
     else
-        echo "FAIL ($(date +%y%m%d-%H%M)): prepare_backup returned with exit code $prepareStatus" | append_log
+        echo "FAIL ($timpstamp): prepare_backup returned with exit code $prepareStatus" | append_log
     fi
 
-    # TODO: Perform actual backup
+    # Build exclude arguments from $BACKUP_EXCLUDE
+    local exclude=""
+    for pattern in $BACKUP_EXCLUDE; do
+        exclude="$exclude --exclude $pattern"
+    done
+
+    echo "Starting Borg backup..."
+    # Use process substitution to write logfile without lines containing CR (0x0D)
+    sudo borg create --progress --stats \
+        --exclude-caches $exclude \
+        $BACKUP_REPO_DIR::$timestamp $BACKUP_DIRS \
+        |& tee >(sed "/\x0D/d" | append_logfile)
+
+    if [[ $1 == "--prune" ]]; then
+        cmd_backup_prune
+    fi    
 }
 
 function cmd_backup_prune() {
-    # TODO: Implement backup prune
+    echo "Pruning old Borg backups..."
+    sudo borg prune --list --stats $BACKUP_PRUNE $BACKUP_REPO_DIR |& append_log
 
     # Delete old logfiles after one month
     local threshold=$(date --date="last month" +%y%m%d)
@@ -187,5 +208,9 @@ function cmd_backup_status() {
         printf "Cron ${red}OFF${default}, "
     fi
     echo "last backup: $(sudo BORG_PASSPHRASE="$TARGET_PASSPHRASE" borg list --last=1 --short $BACKUP_REPO_DIR)"
-    cat $LOG_DIR/backup-*.log | grep --color=always "^FAIL \(.*\):.*"
+    if [[ -e $LOG_DIR/backup-*.log ]]; then
+        cat $LOG_DIR/backup-*.log | grep --color=always "^FAIL \(.*\):.*"
+    else
+        echo "No logs found from previous backups"
+    fi
 }

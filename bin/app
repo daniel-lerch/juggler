@@ -27,7 +27,7 @@ function try_find_directory() {
     while true; do
         if [[ $workdir == "/" ]]; then
             break
-        elif [[ -e "$workdir/docker-compose.yml" ]]; then
+        elif [[ -e "$workdir/docker-compose.yml" || -e "$workdir/juggler.sh" ]]; then
             DIRECTORY=$workdir
             break
         else
@@ -55,7 +55,7 @@ function main() {
                 if [[ ! -d $DIRECTORY ]]; then
                     echo "Directory not found: $DIRECTORY"
                     exit 1
-                elif [[ ! -e "$DIRECTORY/docker-compose.yml" ]]; then
+                elif [[ ! -e "$DIRECTORY/docker-compose.yml" && ! -e "$DIRECTORY/juggler.sh" ]]; then
                     echo "No compose file found in $DIRECTORY"
                     exit 1
                 fi

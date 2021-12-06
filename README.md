@@ -48,7 +48,8 @@ Optional callbacks:
 ### Borg Backup module
 Exposed variables (change to customize behavior):
 - `BACKUP_DIRS` e.g. _/opt/global/nginx_
-- `BACKUP_EXCLUDE` e.g. _/opt/global/nginx/log_
+- `BACKUP_EXCLUDE` e.g. _/opt/global/nginx/log /opt/global/nginx/.env_
+- `BACKUP_PRUNE` e.g. _--keep-within=7d --keep-weekly=4 --keep-monthly=12_
 
 Optional variables (for automatic MySQL dumps to `/var/opt/backup`):
 - `MYSQL_DATABASE`
