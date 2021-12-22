@@ -1,0 +1,9 @@
+[Unit]
+Description=Run Juggler backups
+
+[Service]
+Environment=JUGGLER_CONFIG_FILE=/opt/global/common/juggler_config.sh
+PassEnvironment=JUGGLER_CONFIG_FILE
+ExecStart=/opt/juggler/bin/apps backup create -cp
+StandardOutput=file:/var/log/juggler.log
+StandardError=file:/var/log/juggler.log

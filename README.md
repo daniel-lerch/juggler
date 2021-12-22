@@ -1,9 +1,14 @@
 # Juggler
 
 ## Install
-1. `git clone https://github.com/daniel-lerch/juggler.git /opt/juggler`
-2. Add `/opt/juggler/bin` to _PATH_ permanently for all users
-3. Set _JUGGLER\_CONFIG\_FILE_ permanently for all users (read more about config below)
+1. Clone Juggler  
+`git clone https://github.com/daniel-lerch/juggler.git /opt/juggler`
+2. Configure environment variables  
+`sudo cp /opt/juggler/res/juggler.sh /etc/profile.d/`
+3. Copy Systemd unit files  
+`sudo cp /opt/juggler/res/juggler.timer /opt/juggler/res/juggler.service /etc/systemd/system/`
+4. Enable Systemd timer  
+`sudo systemctl enable --now juggler.timer`
 
 ## Structure
 Juggler consists out of four main components:
@@ -16,7 +21,7 @@ Major challenges with Bash for a complex framework like Juggler
 - Parse variables from `docker-compose.yml` files. Solution: Implemented in an external Python script.
 - Juggler cannot iterate through multiple apps because of dangling variables. Solution: Start an own Juggler process for each app.
 - Creating a good help overview requires lots of additional functions. Solution: Only show compose commands and backup module.
-- For multiple apps it is hard to determine whether a command is available.
+- For multiple apps it is hard to determine whether a command is available. Solution: Only allow certain command for batch execution.
 
 ## Variables and functions
 
@@ -50,6 +55,7 @@ Exposed variables (change to customize behavior):
 - `BACKUP_DIRS` e.g. _/opt/global/nginx_
 - `BACKUP_EXCLUDE` e.g. _/opt/global/nginx/log /opt/global/nginx/.env_
 - `BACKUP_PRUNE` e.g. _--keep-within=7d --keep-weekly=4 --keep-monthly=12_
+- `BACKUP_CRONJOB` e.g. _0_ (disabled) or _1_ (enabled)
 
 Optional variables (for automatic MySQL dumps to `/var/opt/backup`):
 - `MYSQL_DATABASE`

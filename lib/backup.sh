@@ -7,9 +7,7 @@ Usage: app backup [OPTION]... <command>
 
 Commands:
   init
-  register
-  deregister
-  create [--prune]      Create a new backup
+  create [-p][-c]       Create a new backup
   prune                 Delete old backups
   mount <tag> <path>    Mounts an archive at the specified location
   umount <path>
@@ -111,25 +109,37 @@ function cmd_backup_init() {
     sudo BORG_PASSPHRASE="$TARGET_PASSPHRASE" borg init -e $TARGET_ENCRYPTION $BACKUP_REPO_DIR
 }
 
-function cmd_backup_register() {
-    # Get random minute between 0 and 59 to prevent backups from running all at once
-    local minute=$(shuf -i 0-59 -n 1)
-    local command="/opt/juggler/bin/app -n $PROJECT_TITLE backup create --prune"
-    echo "# Juggler cron job to backup $PROJECT_TITLE
-$minute 3 * * * root $command" | sudo tee $CRON_FILE_PATH > /dev/null
-    echo "Registered cron job for $PROJECT_TITLE"
-}
-
-function cmd_backup_deregister() {
-    if [[ -e $CRON_FILE_PATH ]]; then
-        sudo rm $CRON_FILE_PATH
-        echo "Removed cron job for $PROJECT_TITLE"
-    else
-        echo "No cron job found for $PROJECT_TITLE"
-    fi
-}
-
 function cmd_backup_create() {
+    # Reset the argument counter as we are calling getopts the third time
+    unset OPTIND
+    local prune=0
+    local cronjob=0
+    while getopts ":pc" arg; do
+        case $arg in
+            p)
+                prune=1
+                ;;
+            c)
+                cronjob=1
+                ;;
+            \?)
+                echo "Invalid option: '$OPTARG'"
+                backup_about_help
+                exit 1
+                ;;
+            :)
+                echo "Invalid option: '$OPTARG' requires an argument"
+                backup_about_help
+                exit 1
+                ;;
+        esac
+    done
+
+    if [[ $cronjob -eq 1 && $BACKUP_CRONJOB -ne 1 ]]; then
+        echo "Cronjob backups are disabled for $PROJECT_TITLE"
+        exit 0
+    fi
+
     local timestamp=$(date +%y%m%d-%H%M)
     # Create log folder
     [[ ! -d $LOG_DIR ]] && sudo -u $LOG_USER mkdir $LOG_DIR
@@ -157,7 +167,7 @@ function cmd_backup_create() {
     elif [[ $prepareStatus -eq 0 ]]; then
         echo "SUCCESS ($timestamp): prepare_backup completed successfully" | append_logfile
     else
-        echo "FAIL ($timpstamp): prepare_backup returned with exit code $prepareStatus" | append_log
+        echo "FAIL ($timestamp): prepare_backup returned with exit code $prepareStatus" | append_log
     fi
 
     # Build exclude arguments from $BACKUP_EXCLUDE
@@ -168,19 +178,19 @@ function cmd_backup_create() {
 
     echo "Starting Borg backup..."
     # Use process substitution to write logfile without lines containing CR (0x0D)
-    sudo borg create --progress --stats \
+    sudo BORG_PASSPHRASE="$TARGET_PASSPHRASE" borg create --progress --stats \
         --exclude-caches $exclude \
         $BACKUP_REPO_DIR::$timestamp $BACKUP_DIRS \
         |& tee >(sed "/\x0D/d" | append_logfile)
 
-    if [[ $1 == "--prune" ]]; then
+    if [[ $prune -eq 1 ]]; then
         cmd_backup_prune
     fi    
 }
 
 function cmd_backup_prune() {
     echo "Pruning old Borg backups..."
-    sudo borg prune --list --stats $BACKUP_PRUNE $BACKUP_REPO_DIR |& append_log
+    sudo BORG_PASSPHRASE="$TARGET_PASSPHRASE" borg prune --list --stats $BACKUP_PRUNE $BACKUP_REPO_DIR |& append_log
 
     # Delete old logfiles after one month
     local threshold=$(date --date="last month" +%y%m%d)
@@ -202,13 +212,13 @@ function cmd_backup_status() {
     local red="\033[0;31m"
     local green="\033[0;32m"
     local default="\033[0m"
-    if [[ -e $CRON_FILE_PATH ]]; then
+    if [[ $BACKUP_CRONJOB -eq 1 ]]; then
         printf "Cron ${green}ON${default}, "
     else
         printf "Cron ${red}OFF${default}, "
     fi
     echo "last backup: $(sudo BORG_PASSPHRASE="$TARGET_PASSPHRASE" borg list --last=1 --short $BACKUP_REPO_DIR)"
-    if [[ -e $LOG_DIR/backup-*.log ]]; then
+    if compgen -G "$LOG_DIR/backup-*.log" > /dev/null; then
         cat $LOG_DIR/backup-*.log | grep --color=always "^FAIL \(.*\):.*"
     else
         echo "No logs found from previous backups"
