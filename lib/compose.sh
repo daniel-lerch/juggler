@@ -17,7 +17,7 @@ function compose_post_init() {
 # Make your changes in juggler.sh instead.
 
 EOT
-        chmod 660 "$PROJECT_DIR/.env"
+        chown $PROJECT_DIR_USER:$PROJECT_DIR_GROUP "$PROJECT_DIR/.env"
         for variable in $composeVariables; do
             eval "local value=\${$variable}"
             echo $variable=$value >> "$PROJECT_DIR/.env"

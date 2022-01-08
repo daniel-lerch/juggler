@@ -90,19 +90,18 @@ function backup_main() {
     LOG_DIR="$PROJECT_DIR/log"
     LOG_FILE_PATH="$LOG_DIR/backup-$(date +%y%m%d).log"
     CRON_FILE_PATH="/etc/cron.d/borgbackup-$COMPOSE_PROJECT_NAME"
-    LOG_USER=$(stat -c "%U" $PROJECT_DIR)
 
     eval "cmd_backup_$command \$@"
 }
 
 function append_log() {
     # Input in a bash function is read by the first command
-    sudo -u $LOG_USER tee -a $LOG_FILE_PATH
+    sudo -u $PROJECT_DIR_USER tee -a $LOG_FILE_PATH
 }
 
 function append_logfile() {
     # Input in a bash function is read by the first command
-    sudo -u $LOG_USER tee -a $LOG_FILE_PATH > /dev/null
+    sudo -u $PROJECT_DIR_USER tee -a $LOG_FILE_PATH > /dev/null
 }
 
 function cmd_backup_init() {
@@ -142,7 +141,7 @@ function cmd_backup_create() {
 
     local timestamp=$(date +%y%m%d-%H%M)
     # Create log folder
-    [[ ! -d $LOG_DIR ]] && sudo -u $LOG_USER mkdir $LOG_DIR
+    [[ ! -d $LOG_DIR ]] && sudo -u $PROJECT_DIR_USER mkdir $LOG_DIR
     # Check if function prepare_backup() is defined
     declare -F "prepare_backup" > /dev/null
     if [[ $? == 0 ]]; then

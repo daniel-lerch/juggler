@@ -26,6 +26,8 @@ function core_init() {
     PROJECT_GROUP=$(basename $group_directory)
     PROJECT_TITLE="$PROJECT_GROUP/$PROJECT_NAME"
     PROJECT_FULLNAME="$PROJECT_GROUP-$PROJECT_NAME"
+    PROJECT_DIR_USER=$(stat -c "%U" $PROJECT_DIR)
+    PROJECT_DIR_GROUP=$(stat -c "%G" $PROJECT_DIR)
 
     local composeModule=0
     if [[ -e "$PROJECT_DIR/docker-compose.yml" ]]; then
