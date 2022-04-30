@@ -134,7 +134,7 @@ function cmd_backup_create() {
         esac
     done
 
-    if [[ $cronjob -eq 1 && $BACKUP_CRONJOB -ne 1 ]]; then
+    if [[ $cronjob -eq 1 && (-z $BACKUP_CRONJOB || $BACKUP_CRONJOB -ne 1) ]]; then
         echo "Cronjob backups are disabled for $PROJECT_TITLE"
         exit 0
     fi
@@ -142,6 +142,12 @@ function cmd_backup_create() {
     local timestamp=$(date +%y%m%d-%H%M)
     # Create log folder
     [[ ! -d $LOG_DIR ]] && sudo -u $PROJECT_DIR_USER mkdir $LOG_DIR
+
+    if [[ ! -f $BACKUP_REPO_DIR/config ]]; then
+        echo "FAIL ($timestamp): Borg repository not found" | append_log
+        exit 0
+    fi
+
     # Check if function prepare_backup() is defined
     declare -F "prepare_backup" > /dev/null
     if [[ $? == 0 ]]; then
