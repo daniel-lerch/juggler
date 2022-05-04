@@ -10,7 +10,20 @@
 4. Enable Systemd timer  
 `sudo systemctl enable --now juggler.timer`
 
-## Structure
+## Fundamentals
+Juggler simpfies management of Docker Compose services by using common patterns and providing tools.
+Applications are split into groups which reside in `/opt/<group-name>`.
+Within its group, each application is located in its own subfolder with a `docker-compose.yml` or `juggler.sh` file.
+
+Juggler can manage manage backups for arbitrary applications but we will focus on Docker Compose here.
+To use an existing Compose file with Juggler, no changes are required.
+Just run `app up` and Juggler will take care of Docker Compose settings and provide you a simple backup mechanism.
+With a `juggler.sh` file you can add custom commands as functions with a `cmd_` prefix.
+Any variables you set will be available in the Compose file with the `${BASH_VARIABLE_NAME}` syntax.
+
+Technically, Juggler scans a Compose file for variable names and adds them from Bash to a generated `.env` file.
+
+## Bash architecture
 Juggler consists out of four main components:
 1. `bin/app` the bootstrapper executable
 2. `lib/core.sh` the core module
