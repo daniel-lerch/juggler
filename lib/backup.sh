@@ -209,6 +209,14 @@ function cmd_backup_prune() {
     done
 }
 
+function cmd_backup_mount() {
+    sudo borg mount $BACKUP_REPO_DIR::$1 $2
+}
+
+function cmd_backup_umount() {
+    sudo borg umount $1
+}
+
 function cmd_backup_list() {
     sudo BORG_PASSPHRASE="$TARGET_PASSPHRASE" borg list $BACKUP_REPO_DIR
 }
