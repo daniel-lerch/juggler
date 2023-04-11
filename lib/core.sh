@@ -11,6 +11,7 @@ Commands:
   stop
   exec
   logs
+  ps
 
 Modules:
   backup        Invoke Borg and manage backups
@@ -21,13 +22,18 @@ EOT
 function core_init() {
     # Initialize variables
     PROJECT_DIR=$1
+    PROJECT_DIR_UID=$(stat -c "%U" $PROJECT_DIR)
+    PROJECT_DIR_GID=$(stat -c "%G" $PROJECT_DIR)
     PROJECT_NAME=$(basename $PROJECT_DIR)
-    local group_directory=$(dirname $PROJECT_DIR)
-    PROJECT_GROUP=$(basename $group_directory)
-    PROJECT_TITLE="$PROJECT_GROUP/$PROJECT_NAME"
-    PROJECT_FULLNAME="$PROJECT_GROUP-$PROJECT_NAME"
-    PROJECT_DIR_USER=$(stat -c "%U" $PROJECT_DIR)
-    PROJECT_DIR_GROUP=$(stat -c "%G" $PROJECT_DIR)
+    if [[ $ENABLE_PROJECT_GROUPS -ne 1 ]]; then
+        PROJECT_TITLE=$PROJECT_NAME
+        PROJECT_FULLNAME=$PROJECT_NAME
+    else
+        local group_directory=$(dirname $PROJECT_DIR)
+        PROJECT_GROUP=$(basename $group_directory)
+        PROJECT_TITLE="$PROJECT_GROUP/$PROJECT_NAME"
+        PROJECT_FULLNAME="$PROJECT_GROUP-$PROJECT_NAME"
+    fi
 
     local composeModule=0
     if [[ -e "$PROJECT_DIR/docker-compose.yml" ]]; then

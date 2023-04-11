@@ -17,7 +17,7 @@ function compose_post_init() {
 # Make your changes in juggler.sh instead.
 
 EOT
-        chown $PROJECT_DIR_USER:$PROJECT_DIR_GROUP "$PROJECT_DIR/.env"
+        chown $PROJECT_DIR_UID:$PROJECT_DIR_GID "$PROJECT_DIR/.env"
         for variable in $composeVariables; do
             eval "local value=\${$variable}"
             echo $variable=$value >> "$PROJECT_DIR/.env"
@@ -30,20 +30,30 @@ EOT
 }
 
 function invoke_composer() {
-    # TODO: Omit sudo if not required
-    sudo docker-compose -f $COMPOSE_FILE --env-file "$PROJECT_DIR/.env" -p $COMPOSE_PROJECT_NAME $@
+    echo "invoke_composer is deprecated. Use invoke_compose instead"
+    invoke_compose $@
+}
+
+function invoke_compose() {
+    # Split declaration and assignment: https://superuser.com/a/1103711/1170601
+    local composeCommand
+    if ! composeCommand=$(/opt/juggler/lib/python/docker_compose_command.py $DOCKER_CONTEXT); then
+        echo $composeCommand
+        exit 1
+    fi
+    $composeCommand -f $COMPOSE_FILE --env-file "$PROJECT_DIR/.env" -p $COMPOSE_PROJECT_NAME $@
 }
 
 function cmd_up() {
     if [[ $1 == "-f" ]]; then
-        invoke_composer down
+        invoke_compose down
     fi
 
-    invoke_composer up -d
+    invoke_compose up -d
 }
 
 function cmd_down() {
-    invoke_composer down
+    invoke_compose down
 }
 
 function cmd_update() {
@@ -56,39 +66,43 @@ function cmd_update() {
     if [[ $? == 0 ]]; then
         update_images $@
     else
-        invoke_composer pull
+        invoke_compose pull
     fi
 
     if [[ $recreate == 1 ]]; then
-        invoke_composer up -d
+        invoke_compose up -d
     fi
 }
 
 function cmd_start() {
-    invoke_composer start $@
+    invoke_compose start $@
 }
 
 function cmd_restart() {
-    invoke_composer restart $@
+    invoke_compose restart $@
 }
 
 function cmd_stop() {
-    invoke_composer stop $@
+    invoke_compose stop $@
 }
 
 function cmd_exec() {
-    invoke_composer exec app bash
+    invoke_compose exec app bash
 }
 
 function cmd_logs() {
-    invoke_composer logs -f app
+    invoke_compose logs -f app
+}
+
+function cmd_ps() {
+    invoke_compose ps
 }
 
 function compose_ext_mysql() {
     declare -F "cmd_execdb" > /dev/null
     if [[ $? != 0 ]]; then
         function cmd_execdb() {
-            invoke_composer exec db mysql -h localhost -u $MYSQL_USER -p$MYSQL_PASSWORD $MYSQL_DATABASE
+            invoke_compose exec db mysql -h localhost -u $MYSQL_USER -p$MYSQL_PASSWORD $MYSQL_DATABASE
         }
     fi
 }

@@ -41,6 +41,8 @@ Major challenges with Bash for a complex framework like Juggler
 ### Core module
 Exposed variables:
 - `PROJECT_DIR` e.g. _/opt/global/nginx_
+- `PROJECT_DIR_UID` e.g. _root_
+- `PROJECT_DIR_GID` e.g. _root_
 - `PROJECT_NAME` e.g. _nginx_
 - `PROJECT_GROUP` e.g. _global_
 - `PROJECT_TITLE` e.g. _global/nginx_
@@ -56,6 +58,9 @@ Optional variables (for `execdb` command):
 - `MYSQL_DATABASE`
 - `MYSQL_USER`
 - `MYSQL_PASSWORD`
+
+Other optional variables:
+- `DOCKER_CONTEXT`
 
 Exposed functions:
 - `invoke_composer()` Invokes _docker-compose_ with all required options
@@ -121,6 +126,7 @@ services:
 ```
 - _$JUGGLER\_CONFIG\_FILE_ Global Juggler config file
 ```bash
+ENABLE_PROJECT_GROUPS=1
 # Change this variable to set custom default backup target
 BACKUP_TARGET_DEFAULT="/var/opt/backup"
 BACKUP_TARGET_DEFAULT_ENCRYPTION="none"

@@ -96,12 +96,12 @@ function backup_main() {
 
 function append_log() {
     # Input in a bash function is read by the first command
-    sudo -u $PROJECT_DIR_USER tee -a $LOG_FILE_PATH
+    sudo -u $PROJECT_DIR_UID tee -a $LOG_FILE_PATH
 }
 
 function append_logfile() {
     # Input in a bash function is read by the first command
-    sudo -u $PROJECT_DIR_USER tee -a $LOG_FILE_PATH > /dev/null
+    sudo -u $PROJECT_DIR_UID tee -a $LOG_FILE_PATH > /dev/null
 }
 
 function cmd_backup_init() {
@@ -141,7 +141,7 @@ function cmd_backup_create() {
 
     local timestamp=$(date +%y%m%d-%H%M)
     # Create log folder
-    [[ ! -d $LOG_DIR ]] && sudo -u $PROJECT_DIR_USER mkdir $LOG_DIR
+    [[ ! -d $LOG_DIR ]] && sudo -u $PROJECT_DIR_UID mkdir $LOG_DIR
 
     # Ask for root to handle password failure separately
     sudo true
@@ -164,7 +164,7 @@ function cmd_backup_create() {
     elif [[ ! -z $MYSQL_DATABASE && ! -z $MYSQL_ROOT_PASSWORD ]]; then
         echo "Automatically writing MySQL dump..." \
             | append_log
-        invoke_composer exec -T db \
+        invoke_compose exec -T db \
             mysqldump --single-transaction \
             -h localhost -u root -p$MYSQL_ROOT_PASSWORD $MYSQL_DATABASE \
             --result-file=/var/opt/backup/$MYSQL_DATABASE.sql \
