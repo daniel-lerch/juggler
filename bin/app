@@ -12,7 +12,7 @@ core_commands_overview
 cat <<EOT
 Options:
   -a            Manage all applications installed on this system
-  -n <name>     Manage an application with the specified project name
+  -C <path>     Manage an application in the specified folder
   -h            Show this help message
 
 EOT
@@ -43,15 +43,16 @@ function execute_command() {
 }
 
 function main() {
-    local named=0
+    JUGGLER_LIB=$(dirname $(dirname $(realpath $0)))/lib
+    local path=0
     local help=0
-    while getopts ":n:h" arg; do
+    while getopts ":C:h" arg; do
         case $arg in
-            n)
-                named=1
+            C)
+                path=1
 
                 # getopts ensures that $OPTARG is not empty
-                DIRECTORY="/opt/$OPTARG"
+                DIRECTORY=$OPTARG
                 if [[ ! -d $DIRECTORY ]]; then
                     echo "Directory not found: $DIRECTORY"
                     exit 1
@@ -77,13 +78,12 @@ function main() {
     done
     shift $((OPTIND-1))
 
-    if [[ $named -eq 0 ]]; then
+    if [[ $path -eq 0 ]]; then
         try_find_directory
     fi
 
     # Load core script which implements all commands
-    source /opt/juggler/lib/core.sh
-    core_load_config
+    source $JUGGLER_LIB/core.sh
 
     if [[ $help -eq 1 ]]; then
         help
@@ -94,6 +94,7 @@ function main() {
         echo "No compose file found in this directory and its parents"
         exit 1
     else
+        core_load_config $DIRECTORY
         core_init $DIRECTORY
     fi
 

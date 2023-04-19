@@ -21,6 +21,8 @@ function about_help() {
 }
 
 function main() {
+    JUGGLER_BIN=$(dirname $(realpath $0))
+    JUGGLER_LIB=$(dirname $JUGGLER_BIN)/lib
     local help=0
     while getopts ":h" arg; do
         case $arg in
@@ -42,7 +44,7 @@ function main() {
     shift $((OPTIND-1))
 
     # Load core script which implements all commands
-    source /opt/juggler/lib/core.sh
+    source $JUGGLER_LIB/core.sh
     core_load_config
 
     if [[ $help -eq 1 ]]; then
@@ -60,7 +62,7 @@ function main() {
 
     declare -F "cmd_$1" > /dev/null
     if [[ $? -ne 0 ]]; then
-        source "/opt/juggler/lib/compose.sh"
+        source "$JUGGLER_LIB/compose.sh"
         declare -F "cmd_$1" > /dev/null
         if [[ $? -eq 0 ]]; then
             composeModule=1
@@ -83,7 +85,7 @@ function main() {
         PROJECT_TITLE="$PROJECT_GROUP/$PROJECT_NAME"
 
         echo "Processing $PROJECT_TITLE..."
-        /opt/juggler/bin/app -n $PROJECT_TITLE $@
+        $JUGGLER_BIN/app -C $PROJECT_DIR $@
     done
 
     exit 0

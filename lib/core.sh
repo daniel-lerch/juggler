@@ -37,14 +37,14 @@ function core_init() {
 
     local composeModule=0
     if [[ -e "$PROJECT_DIR/docker-compose.yml" ]]; then
-        source "/opt/juggler/lib/compose.sh"
+        source "$JUGGLER_LIB/compose.sh"
         compose_pre_init
         composeModule=1
     fi
     local backupModule=0
     declare -F "cmd_backup" > /dev/null
     if [[ $? -eq 0 ]]; then
-        source "/opt/juggler/lib/backup.sh"
+        source "$JUGGLER_LIB/backup.sh"
         backup_pre_init
         backupModule=1
     fi
@@ -63,8 +63,10 @@ function core_init() {
 }
 
 function core_load_config() {
+    # Traverse folders to find config first
+    try_find_config $1
     if [[ -z $JUGGLER_CONFIG_FILE ]]; then
-        echo "The JUGGLER_CONFIG_FILE variable is not set. Backup features have been disabled."
+        echo "No Juggler config file found in this directory or its parents and The JUGGLER_CONFIG_FILE variable is not set. Backup features have been disabled."
     else
         if [[ ! -e $JUGGLER_CONFIG_FILE ]]; then
             echo "No Juggler config file found at $JUGGLER_CONFIG_FILE"
@@ -79,4 +81,18 @@ function core_load_config() {
             backup_main $@
         }
     fi
+}
+
+function try_find_config() {
+    local workdir=$1
+    while true; do
+        if [[ $workdir == "/" ]]; then
+            break
+        elif [[ -e "$workdir/juggler_config.sh" ]]; then
+            JUGGLER_CONFIG_FILE=$workdir/juggler_config.sh
+            break
+        else
+            workdir=$(dirname $workdir)
+        fi
+    done
 }
