@@ -11,6 +11,11 @@ if subprocess.run(["docker", "compose", "version"], stdout=subprocess.DEVNULL).r
     print("sudo docker-compose")
     quit(0)
 else:
+    if sys.version_info < (3, 7):
+        print("sudo docker compose")
+        print("Warning: Docker Contexts are not supported below Python 3.7\n", file=sys.stderr)
+        quit(0)
+
     if len(sys.argv) > 1:
         context_postfix = " -c " + sys.argv[1]
         result = subprocess.run(["docker", "context", "inspect", sys.argv[1]], capture_output=True, text=True)
