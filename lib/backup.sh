@@ -106,7 +106,7 @@ function append_logfile() {
 
 function invoke_borgbackup() {
     local dockerCommand
-    if ! dockerCommand=$($JUGGLER_LIB/python/docker_command.py); then
+    if ! dockerCommand=$($JUGGLER_LIB/python/docker_command.py $DOCKER_CONTEXT); then
         echo $dockerCommand
         exit 1
     fi
@@ -180,6 +180,15 @@ function cmd_backup_create() {
     if [[ $? == 0 ]]; then
         echo "Preparing for backup..." | append_log
         prepare_backup |& append_log
+        local prepareStatus=${PIPESTATUS[0]}
+    elif [[ ! -z $MARIADB_DATABASE && ! -z $MARIADB_ROOT_PASSWORD ]]; then
+        echo "Automatically writing MariaDB dump..." \
+            | append_log
+        invoke_compose exec -T db \
+            mariadb-dump --single-transaction \
+            -h localhost -u root -p$MARIADB_ROOT_PASSWORD $MARIADB_DATABASE \
+            --result-file=/var/opt/backup/$MARIADB_DATABASE.sql \
+            |& append_log
         local prepareStatus=${PIPESTATUS[0]}
     elif [[ ! -z $MYSQL_DATABASE && ! -z $MYSQL_ROOT_PASSWORD ]]; then
         echo "Automatically writing MySQL dump..." \

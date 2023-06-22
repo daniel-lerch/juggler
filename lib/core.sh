@@ -21,7 +21,7 @@ EOT
 
 function core_init() {
     # Initialize variables
-    PROJECT_DIR=$1
+    PROJECT_DIR=$(realpath $1)
     PROJECT_DIR_UID=$(stat -c "%U" $PROJECT_DIR)
     PROJECT_DIR_GID=$(stat -c "%G" $PROJECT_DIR)
     PROJECT_NAME=$(basename $PROJECT_DIR)

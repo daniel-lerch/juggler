@@ -24,7 +24,9 @@ EOT
         done
     fi
 
-    if [[ ! -z $MYSQL_DATABASE && ! -z $MYSQL_USER && ! -z $MYSQL_PASSWORD ]]; then
+    if [[ ! -z $MARIADB_DATABASE && ! -z $MARIADB_USER && ! -z $MARIADB_PASSWORD ]]; then
+        compose_ext_mariadb
+    elif [[ ! -z $MYSQL_DATABASE && ! -z $MYSQL_USER && ! -z $MYSQL_PASSWORD ]]; then
         compose_ext_mysql
     fi
 }
@@ -96,6 +98,15 @@ function cmd_logs() {
 
 function cmd_ps() {
     invoke_compose ps
+}
+
+function compose_ext_mariadb() {
+    declare -F "cmd_execdb" > /dev/null
+    if [[ $? != 0 ]]; then
+        function cmd_execdb() {
+            invoke_compose exec db mariadb -h localhost -u $MARIADB_USER -p$MARIADB_PASSWORD $MARIADB_DATABASE
+        }
+    fi
 }
 
 function compose_ext_mysql() {
