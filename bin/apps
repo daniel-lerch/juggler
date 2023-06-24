@@ -23,9 +23,24 @@ function about_help() {
 function main() {
     JUGGLER_BIN=$(dirname $(realpath $0))
     JUGGLER_LIB=$(dirname $JUGGLER_BIN)/lib
+
+    if [[ -z $JUGGLER_PROJECT_PATH ]]; then
+        JUGGLER_PROJECT_PATH=~/apps
+    fi
+
     local help=0
-    while getopts ":h" arg; do
+
+    while getopts ":p:h" arg; do
         case $arg in
+            p)
+                # getopts ensures that $OPTARG is not empty
+                if [[ ! -d $OPTARG ]]; then
+                    echo "Directory not found: $OPTARG"
+                    exit 1
+                else
+                    JUGGLER_PROJECT_PATH=$OPTARG
+                fi
+                ;;
             h)
                 help=1
                 ;;
@@ -45,7 +60,7 @@ function main() {
 
     # Load core script which implements all commands
     source $JUGGLER_LIB/core.sh
-    core_load_config
+    core_load_config $JUGGLER_PROJECT_PATH
 
     if [[ $help -eq 1 ]]; then
         help
@@ -73,7 +88,12 @@ function main() {
         fi
     fi
 
-    for PROJECT_DIR in /opt/*/*; do
+    local pathPattern="$(realpath $JUGGLER_PROJECT_PATH)/*"
+    if [[ $ENABLE_PROJECT_GROUPS -eq 1 ]]; then
+        pathPattern="$pathPattern/*"
+    fi
+
+    for PROJECT_DIR in $pathPattern; do
         # Skip folders of Juggler itself
         [[ $(dirname $PROJECT_DIR) = /opt/juggler ]] && continue
         # Skip folder if no compose file or juggler file available

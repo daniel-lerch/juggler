@@ -48,6 +48,10 @@ Exposed variables:
 - `PROJECT_TITLE` e.g. _global/nginx_
 - `PROJECT_FULLNAME` e.g. _global-nginx_
 
+Optional variables:
+- `$JUGGLER_CONFIG_FILE`
+- `$JUGGLER_PROJECT_PATH` defaults to _~/apps_
+
 ### Docker Compose module
 Exposed variables:
 - `COMPOSE_PROJECT_NAME` alias for _PROJECT\_FULLNAME_
@@ -63,7 +67,7 @@ Other optional variables:
 - `DOCKER_CONTEXT`
 
 Exposed functions:
-- `invoke_composer()` Invokes _docker-compose_ with all required options
+- `invoke_compose()` Invokes _docker-compose_ with all required options
 
 Optional callbacks:
 - `update_images()` (optional callback) Builds custom images and pull images

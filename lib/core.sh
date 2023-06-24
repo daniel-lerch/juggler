@@ -66,7 +66,7 @@ function core_load_config() {
     # Traverse folders to find config first
     try_find_config $1
     if [[ -z $JUGGLER_CONFIG_FILE ]]; then
-        echo "No Juggler config file found in this directory or its parents and The JUGGLER_CONFIG_FILE variable is not set. Backup features have been disabled."
+        echo "No Juggler config file found in this directory or its parents and the JUGGLER_CONFIG_FILE variable is not set. Backup features have been disabled."
     else
         if [[ ! -e $JUGGLER_CONFIG_FILE ]]; then
             echo "No Juggler config file found at $JUGGLER_CONFIG_FILE"
