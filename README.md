@@ -49,8 +49,8 @@ Exposed variables:
 - `PROJECT_FULLNAME` e.g. _global-nginx_
 
 Optional variables:
-- `$JUGGLER_CONFIG_FILE`
-- `$JUGGLER_PROJECT_PATH` defaults to _~/apps_
+- `JUGGLER_CONFIG_FILE`
+- `JUGGLER_PROJECT_PATH` defaults to _~/apps_
 
 ### Docker Compose module
 Exposed variables:

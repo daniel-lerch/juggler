@@ -11,6 +11,7 @@ core_commands_overview
 
 cat <<EOT
 Options:
+  -p <path>     Search in this folder for apps (overrides JUGGLER_PROJECT_PATH)
   -h            Show this help message
 
 EOT
