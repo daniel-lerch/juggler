@@ -163,13 +163,8 @@ function cmd_backup_create() {
     # Create log folder
     [[ ! -d $LOG_DIR ]] && sudo -u $PROJECT_DIR_UID mkdir $LOG_DIR
 
-    # Ask for root to handle password failure separately
-    sudo true
-    if [[ $? != 0 ]]; then
-        exit 1
-    fi
     # Backup directories might be read protected so check with root
-    sudo test -f $BACKUP_REPO_DIR/config
+    invoke_borgbackup info $BACKUP_REPO_DIR > /dev/null
     if [[ $? != 0 ]]; then
         echo "FAIL ($timestamp): Borg repository not found" | append_log
         exit 0
