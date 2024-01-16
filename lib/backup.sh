@@ -159,15 +159,24 @@ function cmd_backup_create() {
         exit 0
     fi
 
+    if [[ $cronjob -ne 1 && -z $STY ]]; then
+        echo "Backups might take a long time and must run in screen"
+        exit 1
+    fi
+
     local timestamp=$(date +%y%m%d-%H%M)
     # Create log folder
     [[ ! -d $LOG_DIR ]] && sudo -u $PROJECT_DIR_UID mkdir $LOG_DIR
 
     # Backup directories might be read protected so check with root
-    invoke_borgbackup info $BACKUP_REPO_DIR > /dev/null
+    invoke_borgbackup info $BACKUP_REPO_DIR &> /dev/null
     if [[ $? != 0 ]]; then
-        echo "FAIL ($timestamp): Borg repository not found" | append_log
-        exit 0
+        if [[ $cronjob -eq 1 ]]; then
+            echo "FAIL ($timestamp): Borg repository not found at $BACKUP_REPO_DIR" | append_log
+        else
+            echo "Borg repository not found at $BACKUP_REPO_DIR"
+        fi
+        exit $cronjob
     fi
 
     # Check if function prepare_backup() is defined
@@ -238,8 +247,8 @@ function cmd_backup_prune() {
     for file in $LOG_DIR/backup-*.log; do
         local filename=$(basename $file)
         local filedate=${filename:7:6} # Substring at offset 7 with length 6 (get numbers only)
-        if [[ -e $file && $threshold -gt $filedate ]]; then
-            sudo rm $file
+        if [[ -f $file && $threshold -gt $filedate ]]; then
+            sudo -u $PROJECT_DIR_UID rm $file
             echo "Deleted $file"
         fi
     done
