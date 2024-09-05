@@ -6,7 +6,8 @@ Juggler backup CLI
 Usage: app backup [OPTION]... <command>
 
 Commands:
-  init
+  build                 Build the custom Borgbackup Docker image
+  init                  Create a backup repository
   create [-p][-c]       Create a new backup
   prune                 Delete old backups
   mount <tag> <path>    Mounts an archive at the specified location
@@ -114,13 +115,36 @@ function invoke_borgbackup() {
     for pattern	in $BACKUP_DIRS; do
         volumes="$volumes -v $pattern:$pattern"
     done
-    $dockerCommand run --rm$volumes -v $BACKUP_REPO_DIR:$BACKUP_REPO_DIR \
-        -v ~/.cache/borg:/cache -v ~/.config/borg:/config \
-        -e BORG_PASSPHRASE="$TARGET_PASSPHRASE" \
-        -e BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK=yes \
-        -e BORG_CACHE_DIR=/cache \
-        -e BORG_CONFIG_DIR=/config \
-        epicsoft/borgbackup:stable $@
+
+    if [[ $BACKUP_REPO_DIR == *"@"* ]]; then
+        $dockerCommand run --rm$volumes -v ~/.ssh:/root/.ssh \
+            -v ~/.cache/borg:/cache -v ~/.config/borg:/config \
+            -e BORG_PASSPHRASE="$TARGET_PASSPHRASE" \
+            -e BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK=yes \
+            -e BORG_RELOCATED_REPO_ACCESS_IS_OK=yes \
+            -e BORG_CACHE_DIR=/cache \
+            -e BORG_CONFIG_DIR=/config \
+            borgbackup-ssh $@
+    else
+        $dockerCommand run --rm$volumes -v $BACKUP_REPO_DIR:$BACKUP_REPO_DIR \
+            -v ~/.cache/borg:/cache -v ~/.config/borg:/config \
+            -e BORG_PASSPHRASE="$TARGET_PASSPHRASE" \
+            -e BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK=yes \
+            -e BORG_RELOCATED_REPO_ACCESS_IS_OK=yes \
+            -e BORG_CACHE_DIR=/cache \
+            -e BORG_CONFIG_DIR=/config \
+            borgbackup-ssh $@
+    fi
+}
+
+function cmd_backup_build() {
+    local dockerCommand
+    if ! dockerCommand=$($JUGGLER_LIB/python/docker_command.py $DOCKER_CONTEXT); then
+        echo $dockerCommand
+        exit 1
+    fi
+    $dockerCommand build --pull -t borgbackup-ssh -f $JUGGLER_LIB/borgbackup-ssh.Dockerfile $JUGGLER_LIB
+
 }
 
 function cmd_backup_init() {
@@ -172,7 +196,7 @@ function cmd_backup_create() {
     invoke_borgbackup info $BACKUP_REPO_DIR &> /dev/null
     if [[ $? != 0 ]]; then
         if [[ $cronjob -eq 1 ]]; then
-            echo "FAIL ($timestamp): Borg repository not found at $BACKUP_REPO_DIR" | append_log
+            echo "FAIL ($timestamp): Borg repository not found at $BACKUP_REPO_DIR or Docker image not built" | append_log
         else
             echo "Borg repository not found at $BACKUP_REPO_DIR"
         fi
