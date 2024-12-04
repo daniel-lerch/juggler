@@ -111,6 +111,12 @@ function invoke_borgbackup() {
         echo $dockerCommand
         exit 1
     fi
+
+    $dockerCommand inspect borgbackup-ssh &> /dev/null
+    if [[ $? != 0 ]]; then
+        $dockerCommand build --pull -t borgbackup-ssh -f $JUGGLER_LIB/borgbackup-ssh.Dockerfile $JUGGLER_LIB
+    fi
+
     local volumes=""
     for pattern	in $BACKUP_DIRS; do
         volumes="$volumes -v $pattern:$pattern"
@@ -144,12 +150,10 @@ function cmd_backup_build() {
         exit 1
     fi
     $dockerCommand build --pull -t borgbackup-ssh -f $JUGGLER_LIB/borgbackup-ssh.Dockerfile $JUGGLER_LIB
-
 }
 
 function cmd_backup_init() {
     invoke_borgbackup init -e $TARGET_ENCRYPTION $BACKUP_REPO_DIR
-    #sudo BORG_PASSPHRASE="$TARGET_PASSPHRASE" borg init -e $TARGET_ENCRYPTION $BACKUP_REPO_DIR
 }
 
 function cmd_backup_create() {
@@ -198,7 +202,7 @@ function cmd_backup_create() {
         if [[ $cronjob -eq 1 ]]; then
             echo "FAIL ($timestamp): Borg repository not found at $BACKUP_REPO_DIR or Docker image not built" | append_log
         else
-            echo "Borg repository not found at $BACKUP_REPO_DIR"
+            echo "Borg repository not found at $BACKUP_REPO_DIR or Docker image not built"
         fi
         exit $cronjob
     fi
@@ -251,10 +255,6 @@ function cmd_backup_create() {
         --exclude-caches $exclude \
         $BACKUP_REPO_DIR::$timestamp $BACKUP_DIRS \
         |& tee >(sed "/\x0D/d" | append_logfile)
-    #sudo BORG_PASSPHRASE="$TARGET_PASSPHRASE" borg create --progress --stats \
-    #    --exclude-caches $exclude \
-    #    $BACKUP_REPO_DIR::$timestamp $BACKUP_DIRS \
-    #    |& tee >(sed "/\x0D/d" | append_logfile)
 
     if [[ $prune -eq 1 ]]; then
         cmd_backup_prune
@@ -264,7 +264,6 @@ function cmd_backup_create() {
 function cmd_backup_prune() {
     echo "Pruning old Borg backups..."
     invoke_borgbackup prune --list --stats $BACKUP_PRUNE $BACKUP_REPO_DIR |& append_log
-    #sudo BORG_PASSPHRASE="$TARGET_PASSPHRASE" borg prune --list --stats $BACKUP_PRUNE $BACKUP_REPO_DIR |& append_log
 
     # Delete old logfiles after one month
     local threshold=$(date --date="last month" +%y%m%d)
@@ -288,7 +287,6 @@ function cmd_backup_umount() {
 
 function cmd_backup_list() {
     invoke_borgbackup list $BACKUP_REPO_DIR
-    #sudo BORG_PASSPHRASE="$TARGET_PASSPHRASE" borg list $BACKUP_REPO_DIR
 }
 
 function cmd_backup_status() {
@@ -301,7 +299,7 @@ function cmd_backup_status() {
         printf "Cron ${red}OFF${default}, "
     fi
     echo "last backup: $(invoke_borgbackup list --last=1 --short $BACKUP_REPO_DIR)"
-    #echo "last backup: $(sudo BORG_PASSPHRASE="$TARGET_PASSPHRASE" borg list --last=1 --short $BACKUP_REPO_DIR)"
+
     if compgen -G "$LOG_DIR/backup-*.log" > /dev/null; then
         cat $LOG_DIR/backup-*.log | grep --color=always "^FAIL \(.*\):.*"
     else
