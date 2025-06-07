@@ -4,7 +4,7 @@
 
 function compose_pre_init() {
     COMPOSE_PROJECT_NAME="$PROJECT_FULLNAME"
-    COMPOSE_FILE="$PROJECT_DIR/docker-compose.yml"
+    COMPOSE_FILE="$1"
     APP_CONTAINER_NAME="$COMPOSE_PROJECT_NAME-app"
 }
 

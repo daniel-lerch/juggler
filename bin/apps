@@ -98,7 +98,7 @@ function main() {
         # Skip folders of Juggler itself
         [[ $(dirname $PROJECT_DIR) = /opt/juggler ]] && continue
         # Skip folder if no compose file or juggler file available
-        [[ (! -e "$PROJECT_DIR/docker-compose.yml") && ( ($composeModule -eq 1) || (! -e "$PROJECT_DIR/juggler.sh") ) ]] && continue
+        [[ (! -e "$PROJECT_DIR/compose.yaml" && ! -e "$PROJECT_DIR/compose.yml" && ! -e "$PROJECT_DIR/docker-compose.yaml" && ! -e "$PROJECT_DIR/docker-compose.yml") && ( ($composeModule -eq 1) || (! -e "$PROJECT_DIR/juggler.sh") ) ]] && continue
         
         PROJECT_NAME=$(basename $PROJECT_DIR)
         local group_directory=$(dirname $PROJECT_DIR)

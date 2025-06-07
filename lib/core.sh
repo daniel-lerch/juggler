@@ -36,9 +36,21 @@ function core_init() {
     fi
 
     local composeModule=0
-    if [[ -f "$PROJECT_DIR/docker-compose.yml" ]]; then
+    if [[ -f "$PROJECT_DIR/compose.yaml" ]]; then
         source "$JUGGLER_LIB/compose.sh"
-        compose_pre_init
+        compose_pre_init "$PROJECT_DIR/compose.yaml"
+        composeModule=1
+    elif [[ -f "$PROJECT_DIR/compose.yml" ]]; then
+        source "$JUGGLER_LIB/compose.sh"
+        compose_pre_init "$PROJECT_DIR/compose.yml"
+        composeModule=1
+    elif [[ -f "$PROJECT_DIR/docker-compose.yaml" ]]; then
+        source "$JUGGLER_LIB/compose.sh"
+        compose_pre_init "$PROJECT_DIR/docker-compose.yaml"
+        composeModule=1
+    elif [[ -f "$PROJECT_DIR/docker-compose.yml" ]]; then
+        source "$JUGGLER_LIB/compose.sh"
+        compose_pre_init "$PROJECT_DIR/docker-compose.yml"
         composeModule=1
     fi
     local backupModule=0
