@@ -26,11 +26,11 @@ function backup_about_help() {
 }
 
 function backup_pre_init() {
-    BACKUP_DIRS=$PROJECT_DIR
-    BACKUP_EXCLUDE="
-        $PROJECT_DIR/log
-        $PROJECT_DIR/.env
-    "
+    BACKUP_DIRS=("$PROJECT_DIR")
+    BACKUP_EXCLUDE=(
+        "$PROJECT_DIR/log"
+        "$PROJECT_DIR/.env"
+    )
     BACKUP_PRUNE="--keep-within=7d --keep-weekly=4 --keep-monthly=12"
 }
 
@@ -118,7 +118,7 @@ function invoke_borgbackup() {
     fi
 
     local volumes=""
-    for pattern	in $BACKUP_DIRS; do
+    for pattern	in "${BACKUP_DIRS[@]}"; do
         volumes="$volumes -v $pattern:$pattern"
     done
 
@@ -245,7 +245,7 @@ function cmd_backup_create() {
 
     # Build exclude arguments from $BACKUP_EXCLUDE
     local exclude=""
-    for pattern in $BACKUP_EXCLUDE; do
+    for pattern in "${BACKUP_EXCLUDE[@]}"; do
         exclude="$exclude --exclude $pattern"
     done
 
@@ -253,7 +253,7 @@ function cmd_backup_create() {
     # Use process substitution to write logfile without lines containing CR (0x0D)
     invoke_borgbackup create --progress --stats \
         --exclude-caches $exclude \
-        $BACKUP_REPO_DIR::$timestamp $BACKUP_DIRS \
+        $BACKUP_REPO_DIR::$timestamp ${BACKUP_DIRS[@]} \
         |& tee >(sed "/\x0D/d" | append_logfile)
 
     if [[ $prune -eq 1 ]]; then
