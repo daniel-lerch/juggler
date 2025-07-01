@@ -1,0 +1,9 @@
+[Unit]
+Description=Run Juggler backups
+
+[Service]
+Environment=JUGGLER_PROJECT_PATH=/home/USER/apps
+PassEnvironment=JUGGLER_PROJECT_PATH
+ExecStart=/opt/juggler/bin/apps backup create -cp
+StandardOutput=file:/home/USER/.local/state/juggler.log
+StandardError=file:/home/USER/.local/state/juggler.log

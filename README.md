@@ -9,6 +9,12 @@
 `sudo cp /opt/juggler/res/juggler.timer /opt/juggler/res/juggler.service /etc/systemd/system/`
 4. Enable Systemd timer  
 `sudo systemctl enable --now juggler.timer`
+5. Copy Systemd user files
+`cp /opt/juggler/res/juggler.user.timer /opt/juggler/res/juggler.user.service /home/USER/.config/systemd/user`
+6. Adjust paths in service
+`vi /home/USER/.config/systemd/user/juggler.user.service`
+6. Enable Systemd user timer
+`systemctl --user enable --now juggler.user.timer`
 
 ## Fundamentals
 Juggler simpfies management of Docker Compose services by using common patterns and providing tools.
